@@ -10,6 +10,8 @@ import men_banner from "./Components/Assets/banner_mens.png";
 import kid_banner from "./Components/Assets/banner_kids.png";
 import LoginSignup from "./Pages/LoginSignup";
 import PrivateRoute from "./Components/PrivateRoute/PrivateRoute";
+import Profile from "./Pages/Profile/Profile";
+import Checkout from './Pages/Checkout/Checkout';
 
 // Admin components
 import AdminDashboard from "./Pages/Admin/Dashboard";
@@ -37,6 +39,16 @@ function App() {
             </PrivateRoute>
           } />
           <Route path="/login" element={<LoginSignup />} />
+          <Route path="/profile" element={
+            <PrivateRoute allowedRoles={['user', 'admin']}>
+              <Profile />
+            </PrivateRoute>
+          } />
+          <Route path="/checkout" element={
+            <PrivateRoute allowedRoles={['user', 'admin']}>
+              <Checkout />
+            </PrivateRoute>
+          } />
 
           {/* Admin Routes */}
           <Route path="/admin/dashboard" element={

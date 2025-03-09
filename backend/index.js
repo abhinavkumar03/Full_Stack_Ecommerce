@@ -111,6 +111,38 @@ const Users = mongoose.model("Users", {
   password: { type: String, required: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   cartData: { type: Object, default: {} },
+  addresses: [{
+    name: String,
+    street: String,
+    city: String,
+    state: String,
+    pincode: String,
+    phone: String,
+    isDefault: { type: Boolean, default: false }
+  }],
+  orders: [{
+    orderId: String,
+    items: [{
+      productId: Number,
+      quantity: Number,
+      price: Number,
+      name: String,
+      image: String
+    }],
+    totalAmount: Number,
+    shippingAddress: {
+      name: String,
+      street: String,
+      city: String,
+      state: String,
+      pincode: String,
+      phone: String
+    },
+    paymentStatus: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
+    orderStatus: { type: String, enum: ['processing', 'shipped', 'delivered', 'cancelled'], default: 'processing' },
+    paymentMethod: String,
+    orderDate: { type: Date, default: Date.now }
+  }],
   date: { type: Date, default: Date.now },
 });
 
@@ -342,7 +374,7 @@ app.post("/relatedproducts", async (req, res) => {
 // Create an endpoint for saving the product in cart
 app.post('/addtocart', fetchuser, async (req, res) => {
   console.log("Add Cart");
-  let userData = await Users.findOne({ _id: req.user.id });
+  let userData = await Users.findOne({ id: req.user.id });
   userData.cartData[req.body.itemId] += 1;
   await Users.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
   res.send("Added")
@@ -448,6 +480,136 @@ app.get("/searchproducts", async (req, res) => {
   } catch (error) {
     console.error("Error searching products:", error);
     res.status(500).json({ success: false, message: "Error searching products" });
+  }
+});
+
+// Get user profile
+app.get('/profile', fetchuser, async (req, res) => {
+  try {
+    const user = await Users.findOne({ id: req.user.id }, '-password');
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching profile" });
+  }
+});
+
+// Update user profile
+app.post('/profile/update', fetchuser, async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const user = await Users.findOneAndUpdate(
+      { id: req.user.id },
+      { name, email },
+      { new: true }
+    ).select('-password');
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error updating profile" });
+  }
+});
+
+// Add/Update address
+app.post('/address', fetchuser, async (req, res) => {
+  try {
+    const user = await Users.findOne({ id: req.user.id });
+    const { addressId, ...addressData } = req.body;
+
+    if (addressId) {
+      // Update existing address
+      const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === addressId);
+      if (addressIndex > -1) {
+        user.addresses[addressIndex] = { ...user.addresses[addressIndex], ...addressData };
+      }
+    } else {
+      // Add new address
+      if (addressData.isDefault) {
+        user.addresses.forEach(addr => addr.isDefault = false);
+      }
+      user.addresses.push(addressData);
+    }
+
+    await user.save();
+    res.json({ success: true, addresses: user.addresses });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error managing address" });
+  }
+});
+
+// Delete address
+app.delete('/address/:id', fetchuser, async (req, res) => {
+  try {
+    const user = await Users.findOne({ _id: req.user.id });
+    user.addresses = user.addresses.filter(addr => addr._id.toString() !== req.params.id);
+    await user.save();
+    res.json({ success: true, addresses: user.addresses });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error deleting address" });
+  }
+});
+
+// Create order
+app.post('/order/create', fetchuser, async (req, res) => {
+  try {
+    const user = await Users.findOne({ id: req.user.id });
+    const { addressId, paymentMethod, items, totalAmount } = req.body;
+
+    // Find selected address
+    const shippingAddress = user.addresses.find(addr => addr._id.toString() === addressId);
+    if (!shippingAddress) {
+      return res.status(400).json({ success: false, message: "Shipping address not found" });
+    }
+
+    // Create order
+    const orderId = 'ORD' + Date.now();
+    const order = {
+      orderId,
+      items,
+      totalAmount,
+      shippingAddress,
+      paymentMethod,
+      paymentStatus: 'pending',
+      orderStatus: 'processing'
+    };
+
+    user.orders.push(order);
+    // Clear cart after order
+    user.cartData = {};
+    
+    await user.save();
+    res.json({ success: true, order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error creating order" });
+  }
+});
+
+// Get user orders
+app.get('/orders', fetchuser, async (req, res) => {
+  try {
+    const user = await Users.findOne({ _id: req.user.id });
+    res.json(user.orders.sort((a, b) => b.orderDate - a.orderDate));
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching orders" });
+  }
+});
+
+// Update order status (for testing)
+app.post('/order/update-status', fetchuser, async (req, res) => {
+  try {
+    const { orderId, paymentStatus, orderStatus } = req.body;
+    const user = await Users.findOne({ _id: req.user.id });
+    
+    const orderIndex = user.orders.findIndex(order => order.orderId === orderId);
+    if (orderIndex === -1) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (paymentStatus) user.orders[orderIndex].paymentStatus = paymentStatus;
+    if (orderStatus) user.orders[orderIndex].orderStatus = orderStatus;
+
+    await user.save();
+    res.json({ success: true, order: user.orders[orderIndex] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error updating order" });
   }
 });
 

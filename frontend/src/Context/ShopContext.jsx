@@ -64,7 +64,9 @@ const ShopContextProvider = (props) => {
   };
 
   const addToCart = (itemId) => {
-    if (!localStorage.getItem("auth-token")) {
+
+    const token = localStorage.getItem("auth-token");
+    if (!token) {
       alert("Please Login");
       return;
     }
@@ -74,7 +76,7 @@ const ShopContextProvider = (props) => {
         method: 'POST',
         headers: {
           Accept: 'application/form-data',
-          'auth-token': `${localStorage.getItem("auth-token")}`,
+          'auth-token': token,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ "itemId": itemId }),

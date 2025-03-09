@@ -96,6 +96,28 @@
     color: white;
     cursor: pointer;
 }
+.checkout-btn {
+    width: 100%;
+    padding: 1rem;
+    background: #ff4141;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 1.5rem;
+  }
+  
+  .checkout-btn:hover:not(:disabled) {
+    background: #e63535;
+  }
+  
+  .checkout-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
 @media(max-width:1280px){
     .cartitems{
         margin: 60px 8%;

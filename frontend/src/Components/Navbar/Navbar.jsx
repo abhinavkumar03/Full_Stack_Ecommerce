@@ -5,6 +5,7 @@ import logo from '../Assets/logo.png'
 import cart_icon from '../Assets/cart_icon.png'
 import { ShopContext } from '../../Context/ShopContext'
 import nav_dropdown from '../Assets/nav-dropdown.svg'
+import nav_profile from '../Assets/admin/nav-profile.svg'
 import { jwtDecode } from 'jwt-decode';
 import { backend_url } from '../../App';
 
@@ -14,6 +15,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { getTotalCartItems } = useContext(ShopContext);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -26,9 +28,13 @@ const Navbar = () => {
       try {
         const decoded = jwtDecode(token);
         setIsAdmin(decoded.user.role === 'admin');
+        setIsLoggedIn(true);
       } catch (error) {
         setIsAdmin(false);
+        setIsLoggedIn(false);
       }
+    } else {
+      setIsLoggedIn(false);
     }
   }, []);
 
@@ -171,9 +177,23 @@ const Navbar = () => {
         </ul>
 
         <div className="nav-login-cart">
-          {localStorage.getItem('auth-token')
-            ? <button onClick={() => { localStorage.removeItem('auth-token'); window.location.replace("/"); }}>Logout</button>
-            : <Link to='/login' style={{ textDecoration: 'none' }}><button>Login</button></Link>}
+          {isLoggedIn ? (
+            <>
+              <Link to="/profile" className="profile-link">
+                <img src={nav_profile} alt="Profile" className="profile-icon" />
+              </Link>
+              <button onClick={() => { 
+                localStorage.removeItem('auth-token'); 
+                setIsLoggedIn(false);
+                setIsAdmin(false);
+                window.location.replace("/"); 
+              }}>Logout</button>
+            </>
+          ) : (
+            <Link to='/login' style={{ textDecoration: 'none' }}>
+              <button>Login</button>
+            </Link>
+          )}
           <Link to="/cart"><img src={cart_icon} alt="cart" /></Link>
           <div className="nav-cart-count">{getTotalCartItems()}</div>
         </div>

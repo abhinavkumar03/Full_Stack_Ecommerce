@@ -141,7 +141,12 @@ const Products = () => {
   return (
     <div className="admin-products">
       <div className="header">
-        <h1>Manage Products</h1>
+        <div className="header-button">
+            <h1>Manage Products</h1>
+            <Link to="/admin/dashboard" className="admin-link edit-btn">
+                Back to Dashboard
+            </Link>
+        </div>
         <button onClick={() => {
           resetForm();
           setShowForm(true);
