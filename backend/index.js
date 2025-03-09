@@ -20,23 +20,73 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-//Image Storage Engine 
+// Image Storage Configuration
 const storage = multer.diskStorage({
-  destination: './upload/images',
-  filename: (req, file, cb) => {
-    return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
+  destination: function (req, file, cb) {
+    cb(null, './upload/images');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'product_' + uniqueSuffix + path.extname(file.originalname));
   }
-})
-const upload = multer({ storage: storage })
-app.post("/upload", upload.single('product'), (req, res) => {
-  res.json({
-    success: 1,
-    image_url: `/images/${req.file.filename}`
-  })
-})
+});
 
-// Route for Images folder
-app.use('/images', express.static('upload/images'));
+// File filter for images
+const fileFilter = (req, file, cb) => {
+  // Accept only image files
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Not an image! Please upload an image.'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
+
+// Serve static files from upload directory
+app.use('/images', express.static(path.join(__dirname, 'upload/images')));
+
+// Image upload endpoint
+app.post('/upload', upload.single('product'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded"
+      });
+    }
+
+    res.json({
+      success: true,
+      image_url: `/images/${req.file.filename}`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error uploading file",
+      error: error.message
+    });
+  }
+});
+
+// Error handling for multer
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File too large. Maximum size is 5MB'
+      });
+    }
+  }
+  next(error);
+});
 
 // MiddleWare to fetch user from token
 const fetchuser = async (req, res, next) => {
@@ -55,11 +105,13 @@ const fetchuser = async (req, res, next) => {
 
 // Schema for creating user model
 const Users = mongoose.model("Users", {
-  name: { type: String },
-  email: { type: String, unique: true },
-  password: { type: String },
-  cartData: { type: Object },
-  date: { type: Date, default: Date.now() },
+  id: { type: Number, required: true },
+  name: { type: String, required: true }, 
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  cartData: { type: Object, default: {} },
+  date: { type: Date, default: Date.now },
 });
 
 // Schema for creating Product
@@ -71,8 +123,9 @@ const Product = mongoose.model("Product", {
   category: { type: String, required: true },
   new_price: { type: Number },
   old_price: { type: Number },
+  keywords: { type: [String], default: [] },
   date: { type: Date, default: Date.now },
-  avilable: { type: Boolean, default: true },
+  available: { type: Boolean, default: true },
 });
 
 // ROOT API Route For Testing
@@ -90,13 +143,14 @@ app.post('/login', async (req, res) => {
     if (passCompare) {
       const data = {
         user: {
-          id: user.id
+          id: user.id,
+          role: user.role
         }
       }
       success = true;
       console.log(user.id);
       const token = jwt.sign(data, JWT_SECRET);
-      res.json({ success, token });
+      res.json({ success, token, role: user.role });
     }
     else {
       return res.status(400).json({ success: success, errors: "please try with correct email/password" })
@@ -123,19 +177,135 @@ app.post('/signup', async (req, res) => {
     name: req.body.username,
     email: req.body.email,
     password: req.body.password,
+    role: req.body.role || 'user',
     cartData: cart,
   });
   await user.save();
   const data = {
     user: {
-      id: user.id
+      id: user.id,
+      role: user.role
     }
   }
 
   const token = jwt.sign(data, JWT_SECRET);
   success = true;
-  res.json({ success, token })
+  res.json({ success, token, role: user.role })
 })
+
+// endpoint for getting all users data
+app.get("/allusers", async (req, res) => {
+  try {
+    let users = await Users.find({}, '-password');
+    console.log("All Users");
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching users" });
+  }
+});
+
+// Create an endpoint for adding users
+app.post("/adduser", async (req, res) => {
+  try {
+    // Check if email already exists
+    const existingUser = await Users.findOne({ email: req.body.email });
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email already exists" 
+      });
+    }
+
+    // Find the highest ID currently in use
+    const highestUser = await Users.findOne().sort('-id');
+    const nextId = highestUser?.id ? highestUser.id + 1 : 1;
+    console.log("Next ID:", nextId);
+
+    // Initialize empty cart data
+    let cartData = {};
+    for (let i = 0; i < 300; i++) {
+      cartData[i] = 0;
+    }
+
+    const user = new Users({
+      id: nextId,
+      name: req.body.name,
+      email: req.body.email,
+      password: req.body.password,
+      role: req.body.role || 'user',
+      cartData: cartData,
+    });
+
+    await user.save();
+    console.log("User saved successfully with ID:", nextId);
+    const userResponse = { ...user.toObject() };
+    delete userResponse.password;
+    res.json({ success: true, user: userResponse });
+  } catch (error) {
+    console.error("Error adding user:", error);
+    res.status(400).json({ 
+      success: false, 
+      message: error.code === 11000 ? 
+        "Email already exists" : 
+        "Error creating user"
+    });
+  }
+});
+
+// Create an endpoint for editing users
+app.post("/edituser", async (req, res) => {
+  try {
+    const updateData = {
+      name: req.body.name,
+      email: req.body.email,
+      role: req.body.role
+    };
+
+    // Only include password in update if it's provided
+    if (req.body.password) {
+      updateData.password = req.body.password;
+    }
+
+    const user = await Users.findOneAndUpdate(
+      { id: req.body.id },
+      updateData,
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const userResponse = { ...user.toObject() };
+    delete userResponse.password;
+    
+    console.log("User updated successfully");
+    res.json({ success: true, user: userResponse });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(400).json({ 
+      success: false, 
+      message: error.code === 11000 ? 
+        "Email already exists" : 
+        "Error updating user"
+    });
+  }
+});
+
+// Create an endpoint for removing users
+app.post("/removeuser", async (req, res) => {
+  try {
+    const user = await Users.findOneAndDelete({ id: req.body.id });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    console.log("User removed successfully");
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error removing user:", error);
+    res.status(500).json({ success: false, message: "Error deleting user" });
+  }
+});
 
 // endpoint for getting all products data
 app.get("/allproducts", async (req, res) => {
@@ -220,11 +390,65 @@ app.post("/addproduct", async (req, res) => {
   res.json({ success: true, name: req.body.name })
 });
 
+app.post("/updateproduct", async (req, res) => {
+  try {
+    const product = await Product.findOneAndUpdate(
+      { id: req.body.id },
+      {
+        name: req.body.name,
+        description: req.body.description,
+        image: req.body.image,
+        category: req.body.category,
+        new_price: req.body.new_price,
+        old_price: req.body.old_price,
+      },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Product not found" 
+      });
+    }
+
+    console.log("Product updated successfully");
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error updating product" 
+    });
+  }
+});
+
 // Create an endpoint for removing products using admin panel
 app.post("/removeproduct", async (req, res) => {
   await Product.findOneAndDelete({ id: req.body.id });
   console.log("Removed");
   res.json({ success: true, name: req.body.name })
+});
+
+// Search products endpoint
+app.get("/searchproducts", async (req, res) => {
+  try {
+    const { query } = req.query;
+    const searchRegex = new RegExp(query, 'i');
+    
+    const products = await Product.find({
+      $or: [
+        { name: searchRegex },
+        { description: searchRegex },
+        { keywords: searchRegex }
+      ]
+    });
+    
+    res.json(products);
+  } catch (error) {
+    console.error("Error searching products:", error);
+    res.status(500).json({ success: false, message: "Error searching products" });
+  }
 });
 
 // Starting Express Server

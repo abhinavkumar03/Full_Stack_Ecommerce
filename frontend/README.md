@@ -68,3 +68,12 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+### pm2 
+npm run prod: Start the server with PM2
+npm run stop: Stop the server
+npm run restart: Restart the server
+npm run logs: View server logs
+pm2 status: Check if the backend is running
+pm2 logs ecommerce-backend: View server logs for errors
+npm run restart:  If needed, restart the server
