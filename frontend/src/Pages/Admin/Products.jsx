@@ -8,6 +8,7 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     id: null,
     name: '',
@@ -28,6 +29,7 @@ const Products = () => {
       const response = await fetch(`${backend_url}/allproducts`);
       const data = await response.json();
       setProducts(data);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching products:', error);
     }
@@ -244,29 +246,33 @@ const Products = () => {
         </div>
       )}
 
-      <div className="products-grid">
-        {products.map((product) => (
-          <div key={product.id} className="product-card">
-            <img src={backend_url+product.image} alt={product.name} />
-            <h3>{product.name}</h3>
-            <p>${product.new_price}</p>
-            <div className="product-actions">
-              <button
-                className="edit-btn"
-                onClick={() => handleUpdate(product)}
-              >
-                Edit
-              </button>
-              <button
-                className="delete-btn"
-                onClick={() => handleDelete(product.id)}
-              >
-                Delete
-              </button>
+      {loading ? (
+        <div className="loader"></div> // Replace this with your loader/spinner if needed
+      ) : (
+        <div className="products-grid">
+          {products.map((product) => (
+            <div key={product.id} className="product-card">
+              <img src={backend_url + product.image} alt={product.name} />
+              <h3>{product.name}</h3>
+              <p>${product.new_price}</p>
+              <div className="product-actions">
+                <button
+                  className="edit-btn"
+                  onClick={() => handleUpdate(product)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDelete(product.id)}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

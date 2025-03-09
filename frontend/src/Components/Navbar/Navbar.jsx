@@ -105,7 +105,7 @@ const Navbar = () => {
       <div className="nav-left">
         <Link to='/' onClick={() => { setMenu("shop") }} style={{ textDecoration: 'none' }} className={`nav-logo`}>
           <img src={logo} alt="logo" />
-          <p>SHOPPER</p>
+          <p>TRENDY</p>
         </Link>
       </div>
 

@@ -7,35 +7,31 @@ const ShopContextProvider = (props) => {
 
   const [products, setProducts] = useState([]);
 
-  const getDefaultCart = () => {
-    let cart = {};
-    for (let i = 0; i < 300; i++) {
-      cart[i] = 0;
-    }
-    return cart;
-  };
-
-  const [cartItems, setCartItems] = useState(getDefaultCart());
+  const [cartItems, setCartItems] = useState([]);
 
   useEffect(() => {
     fetch(`${backend_url}/allproducts`)
       .then((res) => res.json())
       .then((data) => setProducts(data))
 
-    if (localStorage.getItem("auth-token")) {
-      fetch(`${backend_url}/getcart`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/form-data',
-          'auth-token': `${localStorage.getItem("auth-token")}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(),
-      })
-        .then((resp) => resp.json())
-        .then((data) => { setCartItems(data) });
+    const token = localStorage.getItem("auth-token");
+    if (!token) {
+      throw new Error('No authentication token found');
     }
-  }, [])
+
+    fetch(`${backend_url}/getcart`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/form-data',
+        'auth-token': token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(),
+    })
+      .then((resp) => resp.json())
+      .then((data) => { setCartItems(data) });
+
+  }, [cartItems])
 
   const getTotalCartAmount = () => {
     let totalAmount = 0;
@@ -70,18 +66,18 @@ const ShopContextProvider = (props) => {
       alert("Please Login");
       return;
     }
-    setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] + 1 }));
-    if (localStorage.getItem("auth-token")) {
-      fetch(`${backend_url}/addtocart`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/form-data',
-          'auth-token': token,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ "itemId": itemId }),
-      })
-    }
+
+    setCartItems((prev) => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
+    
+    fetch(`${backend_url}/addtocart`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/form-data',
+        'auth-token': token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ "itemId": itemId }),
+    })
   };
 
   const removeFromCart = (itemId) => {

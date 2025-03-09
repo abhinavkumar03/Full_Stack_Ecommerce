@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { backend_url, currency } from '../../App';
 import './Profile.css';
-import { jwtDecode } from 'jwt-decode';
 
 const Profile = () => {
   const [user, setUser] = useState(null);
