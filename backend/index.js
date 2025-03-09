@@ -375,15 +375,20 @@ app.post("/relatedproducts", async (req, res) => {
 app.post('/addtocart', fetchuser, async (req, res) => {
   console.log("Add Cart");
   let userData = await Users.findOne({ id: req.user.id });
+  if (!userData.cartData[req.body.itemId]) {
+    userData.cartData[req.body.itemId] = 0;
+  }
+  
+  // Increment the item count
   userData.cartData[req.body.itemId] += 1;
-  await Users.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
+  await Users.findOneAndUpdate({ id: req.user.id }, { cartData: userData.cartData });
   res.send("Added")
 })
 
 // Create an endpoint for removing the product in cart
 app.post('/removefromcart', fetchuser, async (req, res) => {
   console.log("Remove Cart");
-  let userData = await Users.findOne({ _id: req.user.id });
+  let userData = await Users.findOne({ id: req.user.id });
   if (userData.cartData[req.body.itemId] != 0) {
     userData.cartData[req.body.itemId] -= 1;
   }
@@ -394,7 +399,7 @@ app.post('/removefromcart', fetchuser, async (req, res) => {
 // Create an endpoint for getting cartdata of user
 app.post('/getcart', fetchuser, async (req, res) => {
   console.log("Get Cart");
-  let userData = await Users.findOne({ _id: req.user.id });
+  let userData = await Users.findOne({ id: req.user.id });
   res.json(userData.cartData);
 })
 
@@ -538,7 +543,7 @@ app.post('/address', fetchuser, async (req, res) => {
 // Delete address
 app.delete('/address/:id', fetchuser, async (req, res) => {
   try {
-    const user = await Users.findOne({ _id: req.user.id });
+    const user = await Users.findOne({ id: req.user.id });
     user.addresses = user.addresses.filter(addr => addr._id.toString() !== req.params.id);
     await user.save();
     res.json({ success: true, addresses: user.addresses });
@@ -585,7 +590,7 @@ app.post('/order/create', fetchuser, async (req, res) => {
 // Get user orders
 app.get('/orders', fetchuser, async (req, res) => {
   try {
-    const user = await Users.findOne({ _id: req.user.id });
+    const user = await Users.findOne({ id: req.user.id });
     res.json(user.orders.sort((a, b) => b.orderDate - a.orderDate));
   } catch (error) {
     res.status(500).json({ success: false, message: "Error fetching orders" });
@@ -596,7 +601,7 @@ app.get('/orders', fetchuser, async (req, res) => {
 app.post('/order/update-status', fetchuser, async (req, res) => {
   try {
     const { orderId, paymentStatus, orderStatus } = req.body;
-    const user = await Users.findOne({ _id: req.user.id });
+    const user = await Users.findOne({ id: req.user.id });
     
     const orderIndex = user.orders.findIndex(order => order.orderId === orderId);
     if (orderIndex === -1) {
