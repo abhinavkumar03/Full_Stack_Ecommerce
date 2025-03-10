@@ -15,9 +15,6 @@ const ShopContextProvider = (props) => {
       .then((data) => setProducts(data))
 
     const token = localStorage.getItem("auth-token");
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
 
     fetch(`${backend_url}/getcart`, {
       method: 'POST',
