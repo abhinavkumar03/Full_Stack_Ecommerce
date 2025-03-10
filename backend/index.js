@@ -341,8 +341,11 @@ app.post("/removeuser", async (req, res) => {
 
 // endpoint for getting all products data
 app.get("/allproducts", async (req, res) => {
-  let products = await Product.find({});
-  console.log("All Products");
+  const category = req.query.category; 
+  if (category) products = await Product.find({ category: category });
+  else products = await Product.find({});
+  
+  console.log("Fetched Products for Category:", category || "All Categories");
   res.send(products);
 });
 
