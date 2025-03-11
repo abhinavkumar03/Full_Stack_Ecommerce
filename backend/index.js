@@ -399,12 +399,27 @@ app.post('/removefromcart', fetchuser, async (req, res) => {
   res.send("Removed");
 })
 
-// Create an endpoint for getting cartdata of user
-app.post('/getcart', fetchuser, async (req, res) => {
-  console.log("Get Cart");
-  let userData = await Users.findOne({ id: req.user.id });
-  res.json(userData.cartData);
-})
+app.post('/getcart', async (req, res) => {
+  try {
+    const token = req.headers['auth-token'];
+    
+    if (!token) {
+      alert("Please Login");
+      window.location.href = '/login';
+    }
+    
+    const decodedToken = jwt.verify(token, JWT_SECRET).user;
+    const userId = decodedToken.id;
+    
+    const userData = await Users.findOne({ id: userId });
+    if (!userData) return res.status(404).json({ error: 'User not found' });
+    
+    res.json(userData.cartData || []);
+  } catch (error) {
+    console.error("Error fetching cart:", error);
+    res.status(500).json({ error: "Failed to fetch cart" });
+  }
+});
 
 // Create an endpoint for adding products using admin panel
 app.post("/addproduct", async (req, res) => {

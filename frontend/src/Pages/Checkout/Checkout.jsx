@@ -25,7 +25,8 @@ const Checkout = () => {
     try {
       const token = localStorage.getItem('auth-token');
       if (!token) {
-        throw new Error('No authentication token found');
+        alert("Please Login");
+        window.location.href = '/login';
       }
 
       const response = await fetch(`${backend_url}/profile`, {
@@ -82,7 +83,8 @@ const Checkout = () => {
 
       const token = localStorage.getItem('auth-token');
       if (!token) {
-        throw new Error('No authentication token found');
+        alert("Please Login");
+        window.location.href = '/login';
       }
 
       // Create order
@@ -112,7 +114,8 @@ const Checkout = () => {
 
         const token = localStorage.getItem('auth-token');
         if (!token) {
-          throw new Error('No authentication token found');
+          alert("Please Login");
+          window.location.href = '/login';
         }
 
         // Update order status based on payment method

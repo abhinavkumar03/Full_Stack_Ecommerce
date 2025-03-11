@@ -9,26 +9,40 @@ const ShopContextProvider = (props) => {
 
   const [cartItems, setCartItems] = useState([]);
 
+  // Frontend React code
   useEffect(() => {
     fetch(`${backend_url}/allproducts`)
       .then((res) => res.json())
-      .then((data) => setProducts(data))
+      .then((data) => setProducts(data));
 
     const token = localStorage.getItem("auth-token");
+    
+    if (token) {
+      fetch(`${backend_url}/getcart`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/form-data',
+          'auth-token': token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(),
+      })
+        .then((resp) => resp.json())
+        .then((data) => { 
+          setCartItems(data);
+          localStorage.setItem("local-cart", JSON.stringify(data));
+        })
+        .catch(error => {
+          console.error("Error fetching cart:", error);
+          const localCart = JSON.parse(localStorage.getItem("local-cart") || "[]");
+          setCartItems(localCart);
+        });
+    } else {
+      const localCart = JSON.parse(localStorage.getItem("local-cart") || "[]");
+      setCartItems(localCart);
+    }
+  }, []);
 
-    fetch(`${backend_url}/getcart`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/form-data',
-        'auth-token': token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(),
-    })
-      .then((resp) => resp.json())
-      .then((data) => { setCartItems(data) });
-
-  }, [cartItems])
 
   const getTotalCartAmount = () => {
     let totalAmount = 0;
@@ -61,6 +75,7 @@ const ShopContextProvider = (props) => {
     const token = localStorage.getItem("auth-token");
     if (!token) {
       alert("Please Login");
+      window.location.href = '/login';
       return;
     }
 

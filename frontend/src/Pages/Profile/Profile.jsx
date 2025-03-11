@@ -34,7 +34,8 @@ const Profile = () => {
       setError(null);
       const token = localStorage.getItem('auth-token');
       if (!token) {
-        throw new Error('No authentication token found');
+        alert("Please Login");
+        window.location.href = '/login';
       }
 
       const response = await fetch(`${backend_url}/profile`, {
@@ -92,7 +93,8 @@ const Profile = () => {
 
       const token = localStorage.getItem('auth-token');
       if (!token) {
-        throw new Error('No authentication token found');
+        alert("Please Login");
+        window.location.href = '/login';
       }
 
       const response = await fetch(`${backend_url}/address`, {
