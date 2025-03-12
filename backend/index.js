@@ -45,10 +45,14 @@ app.use((error, req, res, next) => {
 });
 
 // Start Server with proper error handling
-app.listen(PORT, (error) => {
-    if (!error) console.log("Server Running on port " + PORT);
-    else console.log("Error : ", error);
-});
+const server = app.listen(PORT)
+    .on('listening', () => {
+        console.log(`Server running on port ${PORT}`);
+    })
+    .on('error', (error) => {
+        console.error('Server failed to start:', error.message);
+        process.exit(1);
+    });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
