@@ -17,7 +17,7 @@ import Checkout from './Pages/Checkout/Checkout';
 import AdminDashboard from "./Pages/Admin/Dashboard";
 import AdminProducts from "./Pages/Admin/Products";
 import AdminUsers from "./Pages/Admin/Users";
-export const backend_url = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+export const backend_url = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4001';
 export const currency = '₹';
 
 function App() {
