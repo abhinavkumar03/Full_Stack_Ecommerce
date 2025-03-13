@@ -209,7 +209,7 @@
         font-size: 20px;
     }
     .nav-menu-visible{
-        height: 170px;
+        height: auto;
         top: 60px;
     }
     .nav-login-cart{
