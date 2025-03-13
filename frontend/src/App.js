@@ -17,6 +17,7 @@ import Checkout from './Pages/Checkout/Checkout';
 import AdminDashboard from "./Pages/Admin/Dashboard";
 import AdminProducts from "./Pages/Admin/Products";
 import AdminUsers from "./Pages/Admin/Users";
+import AboutPage from "./Pages/About";
 
 export const backend_url = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
 export const currency = '₹';
@@ -28,6 +29,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Shop gender="all" />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/mens" element={<ShopCategory banner={men_banner} category="men" />} />
         <Route path="/womens" element={<ShopCategory banner={women_banner} category="women" />} />
         <Route path="/kids" element={<ShopCategory banner={kid_banner} category="kid" />} />

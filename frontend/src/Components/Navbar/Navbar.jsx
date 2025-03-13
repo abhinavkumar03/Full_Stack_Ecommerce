@@ -174,6 +174,10 @@ const Navbar = () => {
               {menu === "admin" ? <hr /> : <></>}
             </li>
           )}
+          <li onClick={() => { setMenu("about"); setIsMenuOpen(false) }}>
+            <Link to="/about">About</Link>
+            {menu === "about" ? <hr /> : <></>}
+          </li>
         </ul>
 
         <div className="nav-login-cart">
