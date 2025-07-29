@@ -96,4 +96,8 @@
     .newsletter div button{
         font-size: 12px;
     }
+    .newsletter input{
+        padding-left: 10px;
+        font-size: 10px;
+    }
 }

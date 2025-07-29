@@ -178,29 +178,32 @@ const Navbar = () => {
             <Link to="/about">About</Link>
             {menu === "about" ? <hr /> : <></>}
           </li>
+          <li>
+            <div className="nav-login-cart">
+            {isLoggedIn ? (
+              <>
+                <Link to="/profile" className="profile-link">
+                  <img src={nav_profile} alt="Profile" className="profile-icon" />
+                </Link>
+                <button onClick={() => { 
+                  localStorage.removeItem('auth-token'); 
+                  setIsLoggedIn(false);
+                  setIsAdmin(false);
+                  window.location.replace("/"); 
+                }}>Logout</button>
+              </>
+            ) : (
+              <Link to='/login' style={{ textDecoration: 'none' }}>
+                <button>Login</button>
+              </Link>
+            )}
+            <Link to="/cart"><img src={cart_icon} alt="cart" /></Link>
+            <div className="nav-cart-count">{getTotalCartItems()}</div>
+          </div>
+          </li>
         </ul>
 
-        <div className="nav-login-cart">
-          {isLoggedIn ? (
-            <>
-              <Link to="/profile" className="profile-link">
-                <img src={nav_profile} alt="Profile" className="profile-icon" />
-              </Link>
-              <button onClick={() => { 
-                localStorage.removeItem('auth-token'); 
-                setIsLoggedIn(false);
-                setIsAdmin(false);
-                window.location.replace("/"); 
-              }}>Logout</button>
-            </>
-          ) : (
-            <Link to='/login' style={{ textDecoration: 'none' }}>
-              <button>Login</button>
-            </Link>
-          )}
-          <Link to="/cart"><img src={cart_icon} alt="cart" /></Link>
-          <div className="nav-cart-count">{getTotalCartItems()}</div>
-        </div>
+      
       </div>
     </div>
   )
