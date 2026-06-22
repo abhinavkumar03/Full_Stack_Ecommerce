@@ -13,7 +13,25 @@ const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/e-comm
 const JWT_SECRET = process.env.JWT_SECRET || "secret_ecom";
 
 app.use(express.json());
-app.use(cors());
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map(origin => origin.trim())
+  : [];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow Postman, mobile apps, server-to-server requests
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS not allowed for origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 
 // Database Connection With MongoDB
 mongoose.connect(MONGODB_URI)
@@ -105,7 +123,6 @@ const fetchuser = async (req, res, next) => {
 
 // Schema for creating user model
 const Users = mongoose.model("Users", {
-  id: { type: Number, required: true },
   name: { type: String, required: true }, 
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -175,7 +192,7 @@ app.post('/login', async (req, res) => {
     if (passCompare) {
       const data = {
         user: {
-          id: user.id,
+          id: user._id,
           role: user.role
         }
       }
@@ -377,7 +394,7 @@ app.post("/relatedproducts", async (req, res) => {
 // Create an endpoint for saving the product in cart
 app.post('/addtocart', fetchuser, async (req, res) => {
   console.log("Add Cart");
-  let userData = await Users.findOne({ id: req.user.id });
+  let userData = await Users.findById(req.user.id);
   if (!userData.cartData[req.body.itemId]) {
     userData.cartData[req.body.itemId] = 0;
   }
@@ -391,7 +408,7 @@ app.post('/addtocart', fetchuser, async (req, res) => {
 // Create an endpoint for removing the product in cart
 app.post('/removefromcart', fetchuser, async (req, res) => {
   console.log("Remove Cart");
-  let userData = await Users.findOne({ id: req.user.id });
+  let userData = await Users.findById(req.user.id);
   if (userData.cartData[req.body.itemId] != 0) {
     userData.cartData[req.body.itemId] -= 1;
   }
@@ -534,7 +551,7 @@ app.post('/profile/update', fetchuser, async (req, res) => {
 // Add/Update address
 app.post('/address', fetchuser, async (req, res) => {
   try {
-    const user = await Users.findOne({ id: req.user.id });
+    const user = await Users.findById(req.user.id);
     const { addressId, ...addressData } = req.body;
 
     if (addressId) {
@@ -561,7 +578,7 @@ app.post('/address', fetchuser, async (req, res) => {
 // Delete address
 app.delete('/address/:id', fetchuser, async (req, res) => {
   try {
-    const user = await Users.findOne({ id: req.user.id });
+    const user = await Users.findById(req.user.id);
     user.addresses = user.addresses.filter(addr => addr._id.toString() !== req.params.id);
     await user.save();
     res.json({ success: true, addresses: user.addresses });
@@ -573,7 +590,7 @@ app.delete('/address/:id', fetchuser, async (req, res) => {
 // Create order
 app.post('/order/create', fetchuser, async (req, res) => {
   try {
-    const user = await Users.findOne({ id: req.user.id });
+    const user = await Users.findById(req.user.id);
     const { addressId, paymentMethod, items, totalAmount } = req.body;
 
     // Find selected address
@@ -608,7 +625,7 @@ app.post('/order/create', fetchuser, async (req, res) => {
 // Get user orders
 app.get('/orders', fetchuser, async (req, res) => {
   try {
-    const user = await Users.findOne({ id: req.user.id });
+    const user = await Users.findById(req.user.id);
     res.json(user.orders.sort((a, b) => b.orderDate - a.orderDate));
   } catch (error) {
     res.status(500).json({ success: false, message: "Error fetching orders" });
@@ -619,7 +636,7 @@ app.get('/orders', fetchuser, async (req, res) => {
 app.post('/order/update-status', fetchuser, async (req, res) => {
   try {
     const { orderId, paymentStatus, orderStatus } = req.body;
-    const user = await Users.findOne({ id: req.user.id });
+    const user = await Users.findById(req.user.id);
     
     const orderIndex = user.orders.findIndex(order => order.orderId === orderId);
     if (orderIndex === -1) {

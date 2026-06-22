@@ -19,7 +19,7 @@ import AdminProducts from "./Pages/Admin/Products";
 import AdminUsers from "./Pages/Admin/Users";
 import AboutPage from "./Pages/About";
 
-export const backend_url = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+export const backend_url = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 export const currency = '₹';
 
 function App() {
