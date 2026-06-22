@@ -232,7 +232,7 @@ app.post('/signup', async (req, res) => {
   await user.save();
   const data = {
     user: {
-      id: user.id,
+      id: user._id,
       role: user.role
     }
   }
@@ -421,14 +421,16 @@ app.post('/getcart', async (req, res) => {
     const token = req.headers['auth-token'];
     
     if (!token) {
-      alert("Please Login");
-      window.location.href = '/login';
+      return res.status(401).json({
+        success: false,
+        message: "Please Login"
+      });
     }
     
     const decodedToken = jwt.verify(token, JWT_SECRET).user;
     const userId = decodedToken.id;
     
-    const userData = await Users.findOne({ id: userId });
+    const userData = await Users.findById(userId);
     if (!userData) return res.status(404).json({ error: 'User not found' });
     
     res.json(userData.cartData || []);
