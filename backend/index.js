@@ -419,24 +419,28 @@ app.post('/removefromcart', fetchuser, async (req, res) => {
 app.post('/getcart', async (req, res) => {
   try {
     const token = req.headers['auth-token'];
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Please Login"
+
+    console.log("TOKEN:", token);
+
+    const decodedToken = jwt.verify(token, JWT_SECRET).user;
+
+    console.log("DECODED:", decodedToken);
+
+    const userData = await Users.findById(decodedToken.id);
+
+    console.log("USER:", userData);
+
+    if (!userData) {
+      return res.status(404).json({
+        error: "User not found",
+        userId: decodedToken.id
       });
     }
-    
-    const decodedToken = jwt.verify(token, JWT_SECRET).user;
-    const userId = decodedToken.id;
-    
-    const userData = await Users.findById(userId);
-    if (!userData) return res.status(404).json({ error: 'User not found' });
-    
-    res.json(userData.cartData || []);
+
+    res.json(userData.cartData);
   } catch (error) {
-    console.error("Error fetching cart:", error);
-    res.status(500).json({ error: "Failed to fetch cart" });
+    console.error(error);
+    res.status(500).json(error);
   }
 });
 
