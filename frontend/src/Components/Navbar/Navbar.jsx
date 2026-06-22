@@ -25,18 +25,15 @@ const Navbar = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('auth-token');
-    window.location.reload();
     if (token) {
       try {
         const decoded = jwtDecode(token);
         setIsAdmin(decoded.user.role === 'admin');
-        setIsLoggedIn(true);
       } catch (error) {
         setIsAdmin(false);
-        setIsLoggedIn(false);
       }
     } else {
-      setIsLoggedIn(false);
+      setIsAdmin(false);
     }
   }, []);
 
@@ -189,7 +186,6 @@ const Navbar = () => {
                 </Link>
                 <button onClick={() => { 
                   localStorage.removeItem('auth-token'); 
-                  setIsLoggedIn(false);
                   setIsAdmin(false);
                   window.location.replace("/"); 
                 }}>Logout</button>
