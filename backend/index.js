@@ -419,16 +419,8 @@ app.post('/removefromcart', fetchuser, async (req, res) => {
 app.post('/getcart', async (req, res) => {
   try {
     const token = req.headers['auth-token'];
-
-    console.log("TOKEN:", token);
-
     const decodedToken = jwt.verify(token, JWT_SECRET).user;
-
-    console.log("DECODED:", decodedToken);
-
     const userData = await Users.findById(decodedToken.id);
-
-    console.log("USER:", userData);
 
     if (!userData) {
       return res.status(404).json({
