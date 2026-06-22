@@ -15,7 +15,8 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { getTotalCartItems } = useContext(ShopContext);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const token = localStorage.getItem("auth-token");
+  const isLoggedIn = !!token;
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -24,6 +25,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('auth-token');
+    window.location.reload();
     if (token) {
       try {
         const decoded = jwtDecode(token);

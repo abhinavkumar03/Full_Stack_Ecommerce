@@ -401,7 +401,7 @@ app.post('/addtocart', fetchuser, async (req, res) => {
   
   // Increment the item count
   userData.cartData[req.body.itemId] += 1;
-  await Users.findOneAndUpdate({ id: req.user.id }, { cartData: userData.cartData });
+  await Users.findByIdAndUpdate(req.user.id, { cartData: userData.cartData });
   res.send("Added")
 })
 
@@ -412,7 +412,7 @@ app.post('/removefromcart', fetchuser, async (req, res) => {
   if (userData.cartData[req.body.itemId] != 0) {
     userData.cartData[req.body.itemId] -= 1;
   }
-  await Users.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
+  await Users.findByIdAndUpdate(req.user.id, { cartData: userData.cartData });
   res.send("Removed");
 })
 
@@ -526,7 +526,7 @@ app.get("/searchproducts", async (req, res) => {
 // Get user profile
 app.get('/profile', fetchuser, async (req, res) => {
   try {
-    const user = await Users.findOne({ id: req.user.id }, '-password');
+    const user = await Users.findById(req.user.id).select('-password');
     res.json(user);
   } catch (error) {
     res.status(500).json({ success: false, message: "Error fetching profile" });
@@ -537,8 +537,8 @@ app.get('/profile', fetchuser, async (req, res) => {
 app.post('/profile/update', fetchuser, async (req, res) => {
   try {
     const { name, email } = req.body;
-    const user = await Users.findOneAndUpdate(
-      { id: req.user.id },
+    const user = await Users.findByIdAndUpdate(
+      req.user.id,
       { name, email },
       { new: true }
     ).select('-password');
